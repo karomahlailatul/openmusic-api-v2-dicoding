@@ -1,0 +1,9 @@
+node_modules
+notes-api-web-server.pem
+.env
+.prod.env
+OpenMusic-API-V1-LailatulKaromah.zip
+OpenMusic-API-V2-LailatulKaromah.zip
+OpenMusicAPIV1PostmanTest
+OpenMusic API V2 Test
+.package-lock.json
