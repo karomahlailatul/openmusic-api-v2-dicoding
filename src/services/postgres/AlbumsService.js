@@ -37,13 +37,26 @@ class AlbumsService {
       text: 'SELECT * FROM albums WHERE id = $1',
       values: [id],
     };
-    const { rows, rowCount } = await this._pool.query(query);
+    const querySongs = {
+      text: `SELECT 
+        title, year, performer, genre, duration
+        FROM songs WHERE "albumId" = $1`,
+      values: [id],
+    };
 
-    if (!rowCount) {
+    const { rows: albumsRows, rowCount: albumsRowCount } = await this._pool.query(query);
+
+    const { rows: songsRows } = await this._pool.query(querySongs);
+
+    if (!albumsRowCount) {
       throw new NotFoundError('Album tidak ditemukan');
     }
+    const response = {
+      ...albumsRows[0],
+      songs: songsRows,
+    };
 
-    return rows[0];
+    return response;
   }
 
   async editAlbumById(id, { name, year }) {

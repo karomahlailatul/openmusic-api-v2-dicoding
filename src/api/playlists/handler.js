@@ -13,7 +13,7 @@ class PlaylistsHandler {
     const { name } = request.payload;
     const { id: credentialId } = request.auth.credentials;
 
-    await this._service.verifyPlaylistName(name);
+    await this._service.verifyPlaylistName(name, credentialId);
 
     const playlistId = await this._service.addPlaylist({
       name,
@@ -95,6 +95,16 @@ class PlaylistsHandler {
 
     await this._service.addSongToPlaylist(id, songId);
 
+    const action = 'add';
+    const time = new Date().toISOString();
+    await this._service.addActivity({
+      userId: credentialId,
+      playlistId: id,
+      songId,
+      action,
+      time,
+    });
+
     const response = h.response({
       status: 'success',
       message: 'Lagu berhasil ditambahkan ke playlist',
@@ -127,6 +137,16 @@ class PlaylistsHandler {
     await this._service.verifyPlaylistAccess(id, credentialId);
     await this._service.deleteSongFromPlaylist(id, songId);
 
+    const action = 'add';
+    const time = new Date().toISOString();
+    await this._service.addActivity({
+      userId: credentialId,
+      playlistId: id,
+      songId,
+      action,
+      time,
+    });
+
     return {
       status: 'success',
       message: 'Lagu berhasil dihapus dari playlist',
@@ -134,26 +154,16 @@ class PlaylistsHandler {
   }
 
   async getPlaylistActivitiesHandler(request) {
-    const { id: playlistId } = request.params;
+    const { id } = request.params;
     const { id: credentialId } = request.auth.credentials;
 
-    await this._service.verifyPlaylistAccess(playlistId, credentialId);
+    await this._service.verifyPlaylistAccess(id, credentialId);
 
-    const activitiesFiltered = await this._service.getPlaylistActivities(
-      playlistId,
-    );
+    const { playlistId, activities } = await this._service.getPlaylistActivities(id);
 
     return {
       status: 'success',
-      data: {
-        playlistId,
-        activities: activitiesFiltered.map((activity) => ({
-          username: activity.username,
-          title: activity.title,
-          action: activity.action,
-          time: activity.time,
-        })),
-      },
+      data: { playlistId, activities },
     };
   }
 }

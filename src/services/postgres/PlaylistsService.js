@@ -108,12 +108,12 @@ class PlaylistsService {
     }
   }
 
-  async verifyPlaylistName(name) {
+  async verifyPlaylistName(name, owner) {
     const query = {
-      text: 'SELECT * FROM playlists WHERE name = $1',
-      values: [name],
+      text: 'SELECT * FROM playlists WHERE name = $1 AND owner = $2',
+      values: [name, owner],
     };
-    const rowCount = await this._pool.query(query);
+    const { rowCount } = await this._pool.query(query);
 
     if (rowCount) {
       throw new NotFoundError('Playlist name ditemukan');
@@ -190,22 +190,22 @@ class PlaylistsService {
       values: [playlistId],
     };
 
-    const queryUser = {
-      text: `SELECT users.username FROM users 
-      LEFT JOIN playlists ON users.id = playlists.owner
-      WHERE playlists.id = $1 `,
-      values: [playlistId],
-    };
-    const querySongs = {
-      text: `SELECT songs.id, songs.title, songs.performer FROM songs 
-      LEFT JOIN playlist_songs ON songs.id = playlist_songs.song_id 
-      WHERE playlist_songs.playlist_id = $1`,
-      values: [playlistId],
-    };
+    // const queryUser = {
+    //   text: `SELECT users.username FROM users
+    //   LEFT JOIN playlists ON users.id = playlists.owner
+    //   WHERE playlists.id = $1 `,
+    //   values: [playlistId],
+    // };
+    // const querySongs = {
+    //   text: `SELECT songs.id, songs.title, songs.performer FROM songs
+    //   LEFT JOIN playlist_songs ON songs.id = playlist_songs.song_id
+    //   WHERE playlist_songs.playlist_id = $1`,
+    //   values: [playlistId],
+    // };
 
     const resultPlaylist = await this._pool.query(queryPlaylist);
-    const resultUser = await this._pool.query(queryUser);
-    const resultSongs = await this._pool.query(querySongs);
+    // const resultUser = await this._pool.query(queryUser);
+    // const resultSongs = await this._pool.query(querySongs);
 
     if (!resultPlaylist.rowCount) {
       throw new NotFoundError('Playlist tidak ditemukan');
@@ -213,27 +213,47 @@ class PlaylistsService {
     return {
       id: resultPlaylist.rows[0].id,
       name: resultPlaylist.rows[0].name,
-      username: resultUser.rows[0].username,
-      songs: resultSongs.rows,
+      // username: resultUser.rows[0].username,
+      // songs: resultSongs.rows,
     };
   }
 
-  async getPlaylistActivities(playlistId) {
-    const queryactivitiesFiltered = {
-      text: 'SELECT * FROM playlist_song_activities WHERE id = $1',
-      values: [playlistId],
+  async getPlaylistActivities(id) {
+    const query = {
+      text: `SELECT users.username, songs.title, playlist_song_activities.action, playlist_song_activities.time FROM playlist_song_activities
+      LEFT JOIN playlists ON playlist_song_activities.playlist_id=playlists.id
+      LEFT JOIN users ON playlist_song_activities.user_id=users.id
+      LEFT JOIN songs ON playlist_song_activities.song_id=songs.id
+      WHERE playlist_song_activities.playlist_id=$1`,
+      values: [id],
     };
 
-    const resultactivitiesFiltered = await this._pool.query(
-      queryactivitiesFiltered,
-    );
+    const result = await this._pool.query(query);
+    const activitiesResult = result.rows;
 
-    if (!resultactivitiesFiltered.rowCount) {
-      throw new NotFoundError('Aktivitas lagu tidak ditemukan');
-    }
     return {
-      activities: resultactivitiesFiltered.rows[0].activities,
+      playlistId: id,
+      activities:
+        activitiesResult.length !== 1 || activitiesResult[0].username != null
+          ? activitiesResult
+          : [],
     };
+  }
+
+  async addActivity({
+    userId, playlistId, songId, action, time,
+  }) {
+    const id = `activity-${nanoid(16)}`;
+    const query = {
+      text: 'INSERT INTO playlist_song_activities VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+      values: [id, playlistId, songId, userId, action, time],
+    };
+
+    const result = await this._pool.query(query);
+
+    if (!result.rowCount) {
+      throw new InvariantError('Activity gagal ditambahkan');
+    }
   }
 }
 

@@ -15,6 +15,9 @@ class SongsHandler {
     if (albumId) {
       await this._albumsService.getAlbumById(albumId);
     }
+    // console.log(
+    //   `title: ${request.payload.title}, year: ${request.payload.year}, genre: ${request.payload.genre}, performer: ${request.payload.performer}, duration: ${request.payload.duration}, albumId: ${request.payload.albumId}`
+    // );
 
     const songId = await this._service.addSong(request.payload);
 
