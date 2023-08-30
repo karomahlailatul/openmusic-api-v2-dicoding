@@ -137,7 +137,7 @@ class PlaylistsHandler {
     await this._service.verifyPlaylistAccess(id, credentialId);
     await this._service.deleteSongFromPlaylist(id, songId);
 
-    const action = 'add';
+    const action = 'delete';
     const time = new Date().toISOString();
     await this._service.addActivity({
       userId: credentialId,

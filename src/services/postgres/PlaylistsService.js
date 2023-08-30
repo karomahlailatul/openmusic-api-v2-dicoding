@@ -190,22 +190,22 @@ class PlaylistsService {
       values: [playlistId],
     };
 
-    // const queryUser = {
-    //   text: `SELECT users.username FROM users
-    //   LEFT JOIN playlists ON users.id = playlists.owner
-    //   WHERE playlists.id = $1 `,
-    //   values: [playlistId],
-    // };
-    // const querySongs = {
-    //   text: `SELECT songs.id, songs.title, songs.performer FROM songs
-    //   LEFT JOIN playlist_songs ON songs.id = playlist_songs.song_id
-    //   WHERE playlist_songs.playlist_id = $1`,
-    //   values: [playlistId],
-    // };
+    const queryUser = {
+      text: `SELECT users.username FROM users
+      LEFT JOIN playlists ON users.id = playlists.owner
+      WHERE playlists.id = $1 `,
+      values: [playlistId],
+    };
+    const querySongs = {
+      text: `SELECT songs.id, songs.title, songs.performer FROM songs
+      LEFT JOIN playlist_songs ON songs.id = playlist_songs.song_id
+      WHERE playlist_songs.playlist_id = $1`,
+      values: [playlistId],
+    };
 
     const resultPlaylist = await this._pool.query(queryPlaylist);
-    // const resultUser = await this._pool.query(queryUser);
-    // const resultSongs = await this._pool.query(querySongs);
+    const resultUser = await this._pool.query(queryUser);
+    const resultSongs = await this._pool.query(querySongs);
 
     if (!resultPlaylist.rowCount) {
       throw new NotFoundError('Playlist tidak ditemukan');
@@ -213,8 +213,8 @@ class PlaylistsService {
     return {
       id: resultPlaylist.rows[0].id,
       name: resultPlaylist.rows[0].name,
-      // username: resultUser.rows[0].username,
-      // songs: resultSongs.rows,
+      username: resultUser.rows[0].username,
+      songs: resultSongs.rows,
     };
   }
 
